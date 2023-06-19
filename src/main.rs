@@ -1,21 +1,20 @@
 use std::io::{stdin, stdout, Stdout, Write};
-use termion::color::{AnsiValue, Color, Reset};
 use termion::cursor::Goto;
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::{IntoRawMode, RawTerminal};
-use termion::{clear, color, cursor, style};
+use termion::{clear, color, cursor};
 
 enum Status {
-    TODO,
-    DONE,
+    Todo,
+    Done,
 }
 struct Item {
     text: String,
     status: Status,
 }
 
-fn print_list(stdout: &mut RawTerminal<Stdout>, curr_todo: usize, todos: &Vec<Item>) {
+fn print_list(stdout: &mut RawTerminal<Stdout>, curr_todo: usize, todos: &[Item]) {
     let mut cursor = 1;
     write!(stdout, "{}{}{}", clear::All, Goto(1, 1), cursor::Hide).unwrap();
     stdout.flush().unwrap();
@@ -23,11 +22,11 @@ fn print_list(stdout: &mut RawTerminal<Stdout>, curr_todo: usize, todos: &Vec<It
     for (index, todo) in todos.iter().enumerate() {
         cursor += 1;
         match todo.status {
-            Status::TODO => {
-                write!(stdout, "{}{}", color::Fg(color::Red), "TODO ").unwrap();
+            Status::Todo => {
+                write!(stdout, "{}TODO ", color::Fg(color::Red)).unwrap();
             }
-            Status::DONE => {
-                write!(stdout, "{}{}", color::Fg(color::Green), "DONE ").unwrap();
+            Status::Done => {
+                write!(stdout, "{}DONE ", color::Fg(color::Green)).unwrap();
             }
         }
         if index == curr_todo {
@@ -63,15 +62,15 @@ fn main() {
     let mut todos: Vec<Item> = vec![
         Item {
             text: "Ass".to_string(),
-            status: Status::TODO,
+            status: Status::Todo,
         },
         Item {
             text: "DoubleAss".to_string(),
-            status: Status::TODO,
+            status: Status::Todo,
         },
         Item {
             text: "Triple Ass".to_string(),
-            status: Status::DONE,
+            status: Status::Done,
         },
     ];
     let stdin = stdin();
@@ -86,8 +85,8 @@ fn main() {
             Key::Char('j') => curr_todo += 1,
             Key::Char('k') => curr_todo -= 1,
             Key::Char(' ') => match todos[curr_todo].status {
-                Status::DONE => todos[curr_todo].status = Status::TODO,
-                Status::TODO => todos[curr_todo].status = Status::DONE,
+                Status::Done => todos[curr_todo].status = Status::Todo,
+                Status::Todo => todos[curr_todo].status = Status::Done,
             },
             _ => {}
         }
