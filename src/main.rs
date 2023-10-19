@@ -1,9 +1,8 @@
 use std::io::{stdin, stdout, Stdout, Write};
-use termion::cursor::Goto;
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::{IntoRawMode, RawTerminal};
-use termion::{clear, color, cursor};
+use termion::{clear, color, cursor, style};
 
 enum Status {
     Todo,
@@ -15,12 +14,19 @@ struct Item {
 }
 
 fn print_list(stdout: &mut RawTerminal<Stdout>, curr_todo: usize, todos: &[Item]) {
-    let mut cursor = 1;
-    write!(stdout, "{}{}{}", clear::All, Goto(1, 1), cursor::Hide).unwrap();
+    let mut cursor_position = 1;
+    write!(
+        stdout,
+        "{}{}{}",
+        clear::All,
+        cursor::Goto(1, 1),
+        cursor::Hide
+    )
+    .unwrap();
     stdout.flush().unwrap();
 
     for (index, todo) in todos.iter().enumerate() {
-        cursor += 1;
+        cursor_position += 1;
         match todo.status {
             Status::Todo => {
                 write!(stdout, "{}TODO ", color::Fg(color::Red)).unwrap();
@@ -36,7 +42,7 @@ fn print_list(stdout: &mut RawTerminal<Stdout>, curr_todo: usize, todos: &[Item]
                 color::Bg(color::White),
                 color::Fg(color::Black),
                 todo.text,
-                Goto(1, cursor),
+                cursor::Goto(1, cursor_position),
                 color::Bg(color::Reset),
                 color::Fg(color::Reset)
             )
@@ -48,7 +54,7 @@ fn print_list(stdout: &mut RawTerminal<Stdout>, curr_todo: usize, todos: &[Item]
                 color::Bg(color::Black),
                 color::Fg(color::White),
                 todo.text,
-                Goto(1, cursor),
+                cursor::Goto(1, cursor_position),
                 color::Bg(color::Reset),
                 color::Fg(color::Reset)
             )
@@ -81,7 +87,19 @@ fn main() {
 
     for c in stdin.keys() {
         match c.unwrap() {
-            Key::Char('q') => break,
+            Key::Char('q') => {
+                write!(
+                    stdout,
+                    "{}{}{}{}",
+                    clear::All,
+                    style::Reset,
+                    cursor::Goto(1, 1),
+                    cursor::Show
+                )
+                .unwrap();
+                stdout.flush().unwrap();
+                break;
+            }
             Key::Char('j') => curr_todo += 1,
             Key::Char('k') => curr_todo -= 1,
             Key::Char(' ') => match todos[curr_todo].status {
