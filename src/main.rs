@@ -1,17 +1,10 @@
-use std::io::{stdin, stdout, Stdout, Write};
+use crate::parser::*;
+use std::io::{stdin, stdout, ErrorKind, Stdout, Write};
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::{IntoRawMode, RawTerminal};
 use termion::{clear, color, cursor, style};
-
-enum Status {
-    Todo,
-    Done,
-}
-struct Item {
-    text: String,
-    status: Status,
-}
+pub mod parser;
 
 fn print_list(stdout: &mut RawTerminal<Stdout>, curr_todo: usize, todos: &[Item]) {
     let mut cursor_position = 1;
@@ -64,21 +57,55 @@ fn print_list(stdout: &mut RawTerminal<Stdout>, curr_todo: usize, todos: &[Item]
     }
 }
 
+fn list_up(list: &Vec<Item>, list_curr: &mut usize) {
+    if !list.is_empty() {
+        if *list_curr > 0 {
+            *list_curr -= 1;
+        } else {
+            *list_curr = list.len() - 1;
+        }
+    }
+}
+
+fn list_down(list: &Vec<Item>, list_curr: &mut usize) {
+    if !list.is_empty() {
+        if *list_curr == list.len() - 1 {
+            *list_curr = 0;
+        } else {
+            *list_curr += 1;
+        }
+    }
+}
+
 fn main() {
-    let mut todos: Vec<Item> = vec![
-        Item {
-            text: "Ass".to_string(),
-            status: Status::Todo,
-        },
-        Item {
-            text: "DoubleAss".to_string(),
-            status: Status::Todo,
-        },
-        Item {
-            text: "Triple Ass".to_string(),
-            status: Status::Done,
-        },
-    ];
+    let mut todos: Vec<Item> = Vec::new();
+    match parse_todos(&mut todos) {
+        Ok(()) => println!("Success"),
+        Err(error) => {
+            if error.kind() == ErrorKind::NotFound {
+                todo!()
+            } else {
+                panic!("Could not load state from file : {:?}", error)
+            }
+        }
+    }
+    //let mut todos: Vec<Item> = vec![
+    //    Item {
+    //        text: "Ass".to_string(),
+    //        status: Status::Todo,
+    //        heading: 1,
+    //    },
+    //    Item {
+    //        text: "DoubleAss".to_string(),
+    //        status: Status::Todo,
+    //        heading: 1,
+    //    },
+    //    Item {
+    //        text: "Triple Ass".to_string(),
+    //        status: Status::Done,
+    //        heading: 1,
+    //    },
+    //];
     let stdin = stdin();
     let mut stdout = stdout().into_raw_mode().unwrap();
 
@@ -100,8 +127,8 @@ fn main() {
                 stdout.flush().unwrap();
                 break;
             }
-            Key::Char('j') => curr_todo += 1,
-            Key::Char('k') => curr_todo -= 1,
+            Key::Char('j') => list_down(&todos, &mut curr_todo),
+            Key::Char('k') => list_up(&todos, &mut curr_todo),
             Key::Char(' ') => match todos[curr_todo].status {
                 Status::Done => todos[curr_todo].status = Status::Todo,
                 Status::Todo => todos[curr_todo].status = Status::Done,
