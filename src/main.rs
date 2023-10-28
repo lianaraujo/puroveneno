@@ -89,23 +89,6 @@ fn main() {
             }
         }
     }
-    //let mut todos: Vec<Item> = vec![
-    //    Item {
-    //        text: "Ass".to_string(),
-    //        status: Status::Todo,
-    //        heading: 1,
-    //    },
-    //    Item {
-    //        text: "DoubleAss".to_string(),
-    //        status: Status::Todo,
-    //        heading: 1,
-    //    },
-    //    Item {
-    //        text: "Triple Ass".to_string(),
-    //        status: Status::Done,
-    //        heading: 1,
-    //    },
-    //];
     let stdin = stdin();
     let mut stdout = stdout().into_raw_mode().unwrap();
 
