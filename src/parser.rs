@@ -38,7 +38,7 @@ pub fn parse_todos(todos: &mut Vec<Item>) -> io::Result<()> {
                 if heading_reg.is_match(&line) {
                     match parse_todo(&line) {
                         Some(Status::Todo) => {
-                            let mut split = line.split(" ");
+                            let mut split = line.split(' ');
                             current_todo = Item {
                                 heading: String::from(split.next().unwrap()).chars().count(),
                                 status: Status::Todo,
@@ -47,7 +47,7 @@ pub fn parse_todos(todos: &mut Vec<Item>) -> io::Result<()> {
                             todos.push(current_todo)
                         }
                         Some(Status::Done) => {
-                            let mut split = line.split(" ");
+                            let mut split = line.split(' ');
                             current_todo = Item {
                                 heading: String::from(split.next().unwrap()).chars().count(),
                                 status: Status::Done,
