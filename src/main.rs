@@ -1,5 +1,5 @@
 use crate::parser::*;
-use std::io::{stdin, stdout, ErrorKind, Stdout, Write};
+use std::io::{stdin, stdout, Stdout, Write};
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::{IntoRawMode, RawTerminal};
@@ -79,16 +79,7 @@ fn list_down(list: &Vec<Item>, list_curr: &mut usize) {
 
 fn main() {
     let mut todos: Vec<Item> = Vec::new();
-    match parse_todos(&mut todos) {
-        Ok(()) => println!("Success"),
-        Err(error) => {
-            if error.kind() == ErrorKind::NotFound {
-                todo!()
-            } else {
-                panic!("Could not load state from file : {:?}", error)
-            }
-        }
-    }
+    parse_todos(&mut todos);
     let stdin = stdin();
     let mut stdout = stdout().into_raw_mode().unwrap();
 
@@ -110,12 +101,22 @@ fn main() {
                 stdout.flush().unwrap();
                 break;
             }
+            Key::Char('\n') => match todos[curr_todo].status {
+                // TODO write files when toggling
+                Status::Done => {
+                    todos[curr_todo].status = Status::Todo;
+                    let _ = write_todo_state(&todos[curr_todo]);
+                }
+                Status::Todo => {
+                    todos[curr_todo].status = Status::Done;
+                    let _ = write_todo_state(&todos[curr_todo]);
+                }
+            },
             Key::Char('j') => list_down(&todos, &mut curr_todo),
             Key::Char('k') => list_up(&todos, &mut curr_todo),
-            Key::Char(' ') => match todos[curr_todo].status {
-                Status::Done => todos[curr_todo].status = Status::Todo,
-                Status::Todo => todos[curr_todo].status = Status::Done,
-            },
+            Key::Char(' ') => {
+                //TODO start stop
+            }
             _ => {}
         }
         print_list(&mut stdout, curr_todo, &todos)
