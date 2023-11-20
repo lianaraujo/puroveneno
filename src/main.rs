@@ -27,36 +27,55 @@ struct Timer {
     running: TimerState,
 }
 
-// TODO put this into impl
 // TODO write timer start/stop if curr is mod of 2
-fn start_timer(timer: &mut Timer) {
-    timer.start = Instant::now();
-    timer.duration = TIME_WINDOWS[timer.curr_time_window] as u64;
-    timer.running = TimerState::Running;
-}
+impl Timer {
+    fn new() -> Timer {
+        Timer {
+            start: Instant::now(),
+            curr_time_window: 0,
+            duration: 0,
+            running: TimerState::Idle,
+        }
+    }
 
-fn pause_timer(timer: &mut Timer) {
-    timer.duration = timer.duration - timer.start.elapsed().as_secs();
-    timer.running = TimerState::Paused;
-}
+    fn start_timer(&mut self) {
+        self.start = Instant::now();
+        self.duration = TIME_WINDOWS[self.curr_time_window] as u64;
+        self.running = TimerState::Running;
+    }
 
-fn resume_timer(timer: &mut Timer) {
-    timer.start = Instant::now();
-    timer.running = TimerState::Running;
-}
+    fn pause_timer(&mut self) {
+        self.duration = self.duration - self.start.elapsed().as_secs();
+        self.running = TimerState::Paused;
+    }
 
-fn check_timer(timer: &mut Timer) {
-    if timer.running == TimerState::Running
-        && (timer.duration - timer.start.elapsed().as_secs()) < 1
-    {
-        timer.running = TimerState::Idle;
-        timer.curr_time_window = (timer.curr_time_window + 1) % TIME_WINDOWS.len();
-        timer.duration = TIME_WINDOWS[timer.curr_time_window] as u64;
+    fn resume_timer(&mut self) {
+        self.start = Instant::now();
+        self.running = TimerState::Running;
+    }
+
+    fn check_timer(&mut self) {
+        if self.running == TimerState::Running
+            && (self.duration - self.start.elapsed().as_secs()) < 1
+        {
+            self.running = TimerState::Idle;
+            self.curr_time_window = (self.curr_time_window + 1) % TIME_WINDOWS.len();
+            self.duration = TIME_WINDOWS[self.curr_time_window] as u64;
+        }
     }
 }
 
 // TODO text edit
 // TODO create new items
+fn get_clock_str(curr_time_window: usize, curr_time: u64) -> String {
+    match curr_time_window {
+        0..=1 => format!("@ # {curr_time} # #"),
+        2..=3 => format!("# @ {curr_time} # #"),
+        4..=5 => format!("# # {curr_time} @ #"),
+        6..=7 => format!("# # {curr_time} # @"),
+        _ => format!("# # {curr_time} # #"),
+    }
+}
 
 fn print_list(stdout: &mut RawTerminal<Stdout>, curr_todo: usize, todos: &[Item], timer: &Timer) {
     let mut cursor_position = 1;
@@ -72,26 +91,20 @@ fn print_list(stdout: &mut RawTerminal<Stdout>, curr_todo: usize, todos: &[Item]
 
     let (x, _) = termion::terminal_size().unwrap();
     cursor_position += 1;
-    //TODO write little dots for each time block
-    if timer.running == TimerState::Running {
-        write!(
-            stdout,
-            "{}{}{}",
-            cursor::Goto((x / 2) - 2, 1),
-            timer.duration - timer.start.elapsed().as_secs(),
-            cursor::Goto(1, cursor_position)
-        )
-        .unwrap();
-    } else {
-        write!(
-            stdout,
-            "{}{}{}",
-            cursor::Goto((x / 2) - 2, 1),
-            timer.duration,
-            cursor::Goto(1, cursor_position)
-        )
-        .unwrap();
-    }
+    let curr_time = match timer.running {
+        TimerState::Running => timer.duration - timer.start.elapsed().as_secs(),
+        _ => timer.duration,
+    };
+
+    let clock_str = get_clock_str(timer.curr_time_window, curr_time);
+    write!(
+        stdout,
+        "{}{}{}",
+        cursor::Goto((x / 2) - 6, 1),
+        clock_str,
+        cursor::Goto(1, cursor_position)
+    )
+    .unwrap();
 
     for (index, todo) in todos.iter().enumerate() {
         cursor_position += 1;
@@ -163,18 +176,13 @@ fn main() {
     let mut todos: Vec<Item> = Vec::new();
     parse_todos(&mut todos);
     let mut stdout = stdout().into_raw_mode().unwrap();
-    let mut timer = Timer {
-        start: Instant::now(),
-        curr_time_window: 0,
-        duration: 0,
-        running: TimerState::Idle,
-    };
+    let mut timer = Timer::new();
     let mut curr_todo = 0;
     print_list(&mut stdout, curr_todo, &todos, &timer);
     let (input_sender, input_receiver) = channel();
     thread::spawn(|| take_input(input_sender));
     'render: loop {
-        check_timer(&mut timer);
+        timer.check_timer();
         for c in input_receiver.try_iter() {
             match c {
                 Key::Char('q') => {
@@ -205,9 +213,9 @@ fn main() {
                 // TODO reset Timeblock to 0
                 Key::Char('r') => todo!(),
                 Key::Char(' ') => match timer.running {
-                    TimerState::Idle => start_timer(&mut timer),
-                    TimerState::Running => pause_timer(&mut timer),
-                    TimerState::Paused => resume_timer(&mut timer),
+                    TimerState::Idle => timer.start_timer(),
+                    TimerState::Running => timer.pause_timer(),
+                    TimerState::Paused => timer.resume_timer(),
                 },
                 _ => {}
             }
