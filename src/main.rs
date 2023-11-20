@@ -24,11 +24,11 @@ struct Timer {
     start: Instant,
     curr_time_window: usize,
     duration: u64,
-    //maybe use enum here for timer state instead of just bool
     running: TimerState,
 }
 
 // TODO put this into impl
+// TODO write timer start/stop if curr is mod of 2
 fn start_timer(timer: &mut Timer) {
     timer.start = Instant::now();
     timer.duration = TIME_WINDOWS[timer.curr_time_window] as u64;
@@ -45,9 +45,18 @@ fn resume_timer(timer: &mut Timer) {
     timer.running = TimerState::Running;
 }
 
+fn check_timer(timer: &mut Timer) {
+    if timer.running == TimerState::Running
+        && (timer.duration - timer.start.elapsed().as_secs()) < 1
+    {
+        timer.running = TimerState::Idle;
+        timer.curr_time_window = (timer.curr_time_window + 1) % TIME_WINDOWS.len();
+        timer.duration = TIME_WINDOWS[timer.curr_time_window] as u64;
+    }
+}
+
 // TODO text edit
 // TODO create new items
-// TODO timer
 
 fn print_list(stdout: &mut RawTerminal<Stdout>, curr_todo: usize, todos: &[Item], timer: &Timer) {
     let mut cursor_position = 1;
@@ -63,6 +72,7 @@ fn print_list(stdout: &mut RawTerminal<Stdout>, curr_todo: usize, todos: &[Item]
 
     let (x, _) = termion::terminal_size().unwrap();
     cursor_position += 1;
+    //TODO write little dots for each time block
     if timer.running == TimerState::Running {
         write!(
             stdout,
@@ -164,6 +174,7 @@ fn main() {
     let (input_sender, input_receiver) = channel();
     thread::spawn(|| take_input(input_sender));
     'render: loop {
+        check_timer(&mut timer);
         for c in input_receiver.try_iter() {
             match c {
                 Key::Char('q') => {
@@ -191,6 +202,8 @@ fn main() {
                 },
                 Key::Char('j') => list_down(&todos, &mut curr_todo),
                 Key::Char('k') => list_up(&todos, &mut curr_todo),
+                // TODO reset Timeblock to 0
+                Key::Char('r') => todo!(),
                 Key::Char(' ') => match timer.running {
                     TimerState::Idle => start_timer(&mut timer),
                     TimerState::Running => pause_timer(&mut timer),
