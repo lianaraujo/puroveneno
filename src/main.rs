@@ -38,23 +38,23 @@ impl Timer {
         }
     }
 
-    fn start_timer(&mut self) {
+    fn start(&mut self) {
         self.start = Instant::now();
         self.duration = TIME_WINDOWS[self.curr_time_window] as u64;
         self.running = TimerState::Running;
     }
 
-    fn pause_timer(&mut self) {
-        self.duration = self.duration - self.start.elapsed().as_secs();
+    fn pause(&mut self) {
+        self.duration -= self.start.elapsed().as_secs();
         self.running = TimerState::Paused;
     }
 
-    fn resume_timer(&mut self) {
+    fn resume(&mut self) {
         self.start = Instant::now();
         self.running = TimerState::Running;
     }
 
-    fn check_timer(&mut self) {
+    fn check(&mut self) {
         if self.running == TimerState::Running
             && (self.duration - self.start.elapsed().as_secs()) < 1
         {
@@ -182,7 +182,7 @@ fn main() {
     let (input_sender, input_receiver) = channel();
     thread::spawn(|| take_input(input_sender));
     'render: loop {
-        timer.check_timer();
+        timer.check();
         for c in input_receiver.try_iter() {
             match c {
                 Key::Char('q') => {
@@ -213,9 +213,9 @@ fn main() {
                 // TODO reset Timeblock to 0
                 Key::Char('r') => todo!(),
                 Key::Char(' ') => match timer.running {
-                    TimerState::Idle => timer.start_timer(),
-                    TimerState::Running => timer.pause_timer(),
-                    TimerState::Paused => timer.resume_timer(),
+                    TimerState::Idle => timer.start(),
+                    TimerState::Running => timer.pause(),
+                    TimerState::Paused => timer.resume(),
                 },
                 _ => {}
             }
