@@ -71,6 +71,7 @@ impl Timer {
     }
 }
 
+// TODO write README
 // TODO reading and writing logbook
 // TODO text edit
 // TODO create new items
