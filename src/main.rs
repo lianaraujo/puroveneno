@@ -1,4 +1,4 @@
-use crate::parser::*;
+use crate::parser::{parse_todos, write_todo_state, Item, Status};
 use std::io::{stdin, stdout, Stdout, Write};
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
@@ -8,7 +8,7 @@ use termion::input::TermRead;
 use termion::raw::{IntoRawMode, RawTerminal};
 use termion::{clear, color, cursor, style};
 
-pub mod parser;
+mod parser;
 
 static TIME_WINDOWS: [i32; 8] = [25, 5, 25, 5, 25, 5, 25, 15];
 
@@ -71,8 +71,14 @@ impl Timer {
     }
 }
 
+// TODO reading and writing logbook
 // TODO text edit
 // TODO create new items
+// TODO display time used
+// TODO ascii clock
+// TODO alarm sound
+// TODO notification system
+// TODO config for timers
 fn get_clock_str(curr_time_window: usize, curr_time: u64) -> String {
     match curr_time_window {
         0..=1 => format!("@ # {curr_time} # #"),

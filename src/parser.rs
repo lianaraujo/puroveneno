@@ -71,12 +71,12 @@ pub fn parse_todos(todos: &mut Vec<Item>) {
             if let Ok(line) = line {
                 if heading_reg.is_match(&line) {
                     if let Some(status) = parse_todo(&line) {
-                        let mut split = line.split(' ');
-                        split.next();
                         let prefix = match status {
                             Status::Todo => "TODO ",
                             Status::Done => "DONE ",
                         };
+                        let mut split = line.split(' ');
+                        split.next();
                         current_todo = Item {
                             line_number: index,
                             status,
