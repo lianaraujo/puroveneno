@@ -64,6 +64,7 @@ pub fn write_todo_state(todo: &Item) {
 pub fn parse_todos(todos: &mut Vec<Item>) {
     let heading_reg: Regex = Regex::new(r"\*.*").unwrap();
     // TODO pass file as arg and have a default file
+    let mut new_todos: Vec<Item> = Vec::new();
     let mut current_todo: Item;
     if let Ok(lines) = read_lines("./notas.org") {
         for (index, line) in lines.enumerate() {
