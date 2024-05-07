@@ -63,6 +63,12 @@ impl Timer {
             self.duration = TIME_WINDOWS[self.curr_time_window] as u64;
         }
     }
+    fn reset(&mut self) {
+        if self.running != TimerState::Running {
+            self.curr_time_window = 0;
+            self.running = TimerState::Idle;
+        }
+    }
 }
 
 // TODO text edit
@@ -201,19 +207,22 @@ fn main() {
                 Key::Char('\n') => match todos[curr_todo].status {
                     Status::Done => {
                         todos[curr_todo].status = Status::Todo;
-                        let _ = write_todo_state(&todos[curr_todo]);
+                        write_todo_state(&todos[curr_todo]);
+                        parse_todos(&mut todos);
                     }
                     Status::Todo => {
                         todos[curr_todo].status = Status::Done;
-                        let _ = write_todo_state(&todos[curr_todo]);
+                        write_todo_state(&todos[curr_todo]);
+                        parse_todos(&mut todos);
                     }
                 },
                 Key::Char('j') => list_down(&todos, &mut curr_todo),
                 Key::Char('k') => list_up(&todos, &mut curr_todo),
-                // TODO reset Timeblock to 0
-                Key::Char('r') => todo!(),
+                Key::Char('r') => timer.reset(),
                 Key::Char(' ') => match timer.running {
-                    TimerState::Idle => timer.start(),
+                    TimerState::Idle => {
+                        timer.start();
+                    }
                     TimerState::Running => timer.pause(),
                     TimerState::Paused => timer.resume(),
                 },
