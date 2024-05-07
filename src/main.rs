@@ -151,7 +151,7 @@ fn print_list(stdout: &mut RawTerminal<Stdout>, curr_todo: usize, todos: &[Item]
     }
 }
 
-fn list_up(list: &Vec<Item>, list_curr: &mut usize) {
+fn list_up(list: &[Item], list_curr: &mut usize) {
     if !list.is_empty() {
         if *list_curr > 0 {
             *list_curr -= 1;
@@ -161,7 +161,7 @@ fn list_up(list: &Vec<Item>, list_curr: &mut usize) {
     }
 }
 
-fn list_down(list: &Vec<Item>, list_curr: &mut usize) {
+fn list_down(list: &[Item], list_curr: &mut usize) {
     if !list.is_empty() {
         if *list_curr == list.len() - 1 {
             *list_curr = 0;
