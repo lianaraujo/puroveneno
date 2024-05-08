@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use regex::Regex;
 use std::fs::{self, File, OpenOptions};
-use std::io::{self, BufRead, Write};
+use std::io::{self, BufRead, BufReader, Lines, Write};
 use std::path::Path;
 
 // could save text inside the enum maybe
@@ -30,12 +30,12 @@ fn parse_todo(heading: &str) -> Option<Status> {
     None
 }
 
-fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
+fn read_lines<P>(filename: P) -> io::Result<Lines<BufReader<File>>>
 where
     P: AsRef<Path>,
 {
     let file = File::open(filename)?;
-    Ok(io::BufReader::new(file).lines())
+    Ok(BufReader::new(file).lines())
 }
 
 pub fn write_todo_state(todo: &Item) {

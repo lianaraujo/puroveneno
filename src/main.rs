@@ -1,6 +1,6 @@
-use crate::parser::{parse_todos, write_todo_state, Item, Status};
-use std::io::{stdin, stdout, Stdout, Write};
-use std::sync::mpsc::{channel, Sender};
+use parser::{Item, Status};
+use std::io::{self, Stdout, Write};
+use std::sync::mpsc::{self, Sender};
 use std::thread;
 use std::time::{Duration, Instant};
 use termion::event::Key;
@@ -72,6 +72,7 @@ impl Timer {
 }
 
 // TODO write README
+// TODO use lib.rs for implementation and use main for execution
 // TODO reading and writing logbook
 // TODO text edit
 // TODO create new items
@@ -179,7 +180,7 @@ fn list_down(list: &[Item], list_curr: &mut usize) {
 }
 
 fn take_input(input: Sender<Key>) {
-    let stdin = stdin();
+    let stdin = io::stdin();
     for c in stdin.keys() {
         let _ = input.send(c.unwrap());
     }
@@ -187,12 +188,12 @@ fn take_input(input: Sender<Key>) {
 
 fn main() {
     let mut todos: Vec<Item> = Vec::new();
-    parse_todos(&mut todos);
-    let mut stdout = stdout().into_raw_mode().unwrap();
+    parser::parse_todos(&mut todos);
+    let mut stdout = io::stdout().into_raw_mode().unwrap();
     let mut timer = Timer::new();
     let mut curr_todo = 0;
     print_list(&mut stdout, curr_todo, &todos, &timer);
-    let (input_sender, input_receiver) = channel();
+    let (input_sender, input_receiver) = mpsc::channel();
     thread::spawn(|| take_input(input_sender));
     'render: loop {
         timer.check();
@@ -214,13 +215,13 @@ fn main() {
                 Key::Char('\n') => match todos[curr_todo].status {
                     Status::Done => {
                         todos[curr_todo].status = Status::Todo;
-                        write_todo_state(&todos[curr_todo]);
-                        parse_todos(&mut todos);
+                        parser::write_todo_state(&todos[curr_todo]);
+                        parser::parse_todos(&mut todos);
                     }
                     Status::Todo => {
                         todos[curr_todo].status = Status::Done;
-                        write_todo_state(&todos[curr_todo]);
-                        parse_todos(&mut todos);
+                        parser::write_todo_state(&todos[curr_todo]);
+                        parser::parse_todos(&mut todos);
                     }
                 },
                 Key::Char('j') => list_down(&todos, &mut curr_todo),
