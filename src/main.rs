@@ -9,7 +9,6 @@ use termion::input::TermRead;
 use termion::raw::{IntoRawMode, RawTerminal};
 use termion::{clear, color, cursor, style};
 use tracing::Level;
-use tracing_subscriber;
 
 mod parser;
 
