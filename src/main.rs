@@ -73,7 +73,8 @@ impl Timer {
 
 // TODO write README
 // TODO use lib.rs for implementation and use main for execution
-// TODO reading and writing logbook
+// TODO reading logbook
+// TODO writing clock-out
 // TODO text edit
 // TODO create new items
 // TODO display time used
@@ -230,9 +231,15 @@ fn main() {
                 Key::Char(' ') => match timer.running {
                     TimerState::Idle => {
                         timer.start();
+                        parser::write_clock_in(&todos[curr_todo]).unwrap();
+                        parser::parse_todos(&mut todos);
                     }
                     TimerState::Running => timer.pause(),
-                    TimerState::Paused => timer.resume(),
+                    TimerState::Paused => {
+                        timer.resume();
+                        parser::write_clock_in(&todos[curr_todo]).unwrap();
+                        parser::parse_todos(&mut todos);
+                    }
                 },
                 _ => {}
             }

@@ -1,9 +1,9 @@
+use chrono::prelude::*;
 use itertools::Itertools;
 use regex::Regex;
 use std::fs::{self, File, OpenOptions};
 use std::io::{BufRead, BufReader, Lines, Result as IoResult, Write};
 use std::path::Path;
-use chrono::prelude::*;
 
 // could save text inside the enum maybe
 #[derive(Debug)]
@@ -62,7 +62,7 @@ pub fn write_todo_state(todo: &Item) {
     fs::rename("tmp", "notas.org").expect("Error while overwriting");
 }
 
-pub fn write_clock_in(todo: &Item) {
+pub fn write_clock_in(todo: &Item) -> IoResult<()> {
     let mut f = OpenOptions::new()
         .append(true)
         .create(true)
@@ -71,22 +71,32 @@ pub fn write_clock_in(todo: &Item) {
     let dt = Local::now();
 
     if let Ok(lines) = read_lines("./notas.org") {
-        for (index, line) in lines.enumerate() {
+        let mut linesiter = lines.enumerate().peekable();
+        while let Some((index, line)) = linesiter.next() {
             if let Ok(line) = line {
-                if (todo.line_number + 1) == index && line.contains(":LOGBOOK:"){
-                    writeln!(&mut f, "{}", line).expect("Unable to write");
-                    writeln!(&mut f, "CLOCK: {}", dt.format("[%Y-%m-%d %a %H:%M]")).expect("Unable to write");
-
+                if (todo.line_number + 1) == index {
+                    if line.contains(":LOGBOOK:") {
+                        writeln!(&mut f, "{}", line)?;
+                        writeln!(&mut f, "  CLOCK: {}", dt.format("[%Y-%m-%d %a %H:%M]"))?;
+                    } else {
+                        writeln!(&mut f, "  :LOGBOOK:")?;
+                        writeln!(&mut f, "  CLOCK: {}", dt.format("[%Y-%m-%d %a %H:%M]"))?;
+                        writeln!(&mut f, "  :END:")?;
+                        writeln!(&mut f, "{}", line)?;
+                    }
+                } else if todo.line_number == index && linesiter.peek().is_none() {
+                    writeln!(&mut f, "{}", line)?;
+                    writeln!(&mut f, "  :LOGBOOK:")?;
+                    writeln!(&mut f, "  CLOCK: {}", dt.format("[%Y-%m-%d %a %H:%M]"))?;
+                    writeln!(&mut f, "  :END:")?;
                 } else {
-                    writeln!(&mut f, ":LOGBOOK:").expect("Unable to write");
-                    writeln!(&mut f, "CLOCK: {}", dt.format("[%Y-%m-%d %a %H:%M]")).expect("Unable to write");
-                    writeln!(&mut f, ":END:").expect("Unable to write");
-                    writeln!(&mut f, "{}", line).expect("Unable to write");
+                    writeln!(&mut f, "{}", line)?;
                 }
             }
         }
     }
-    fs::rename("tmp", "notas.org").expect("Error while overwriting");
+    fs::rename("tmp", "notas.org")?;
+    Ok(())
 }
 pub fn parse_todos(todos: &mut Vec<Item>) {
     let heading_reg: Regex = Regex::new(r"\*.*").unwrap();
