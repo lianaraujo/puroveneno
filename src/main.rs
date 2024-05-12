@@ -3,10 +3,13 @@ use std::io::{self, Stdout, Write};
 use std::sync::mpsc::{self, Sender};
 use std::thread;
 use std::time::{Duration, Instant};
+use std::{fs::File, sync::Mutex};
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::{IntoRawMode, RawTerminal};
 use termion::{clear, color, cursor, style};
+use tracing::Level;
+use tracing_subscriber;
 
 mod parser;
 
@@ -82,6 +85,8 @@ impl Timer {
 // TODO alarm sound
 // TODO notification system
 // TODO config for timers
+// TODO remove tracing or find a better way to log
+//
 fn get_clock_str(curr_time_window: usize, curr_time: u64) -> String {
     match curr_time_window {
         0..=1 => format!("@ # {curr_time} # #"),
@@ -188,6 +193,11 @@ fn take_input(input: Sender<Key>) {
 }
 
 fn main() {
+    let log_file = File::create("debug.log").unwrap();
+    tracing_subscriber::fmt()
+        .with_writer(Mutex::new(log_file))
+        .with_max_level(Level::DEBUG)
+        .init();
     let mut todos: Vec<Item> = Vec::new();
     parser::parse_todos(&mut todos);
     let mut stdout = io::stdout().into_raw_mode().unwrap();
